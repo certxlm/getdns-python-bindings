@@ -24,6 +24,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+# XXX
+# https://thomasnyberg.com/what_are_extension_modules.html
+# Py_BEGIN_ALLOW_THREADS
+# setuptools
+# XXX
 
 from distutils.core import setup, Extension
 from distutils.fancy_getopt import fancy_getopt
@@ -35,7 +40,10 @@ long_description = ( 'getdns is a set of wrappers around the getdns'
 
 CFLAGS = [ '-g' ]
 lib_dir = ""
-
+libraries = [ 'getdns' ]
+define_macros = []
+sources = [ 'getdns.c', 'pygetdns_util.c', 'context.c',
+        'context_util.c', 'result.c' ]
 
 if '--with-getdns' in sys.argv:
     getdns_root = sys.argv[sys.argv.index('--with-getdns')+1]
@@ -44,6 +52,12 @@ if '--with-getdns' in sys.argv:
     CFLAGS.append('-I{0}'.format(inc_dir))
     sys.argv.remove('--with-getdns')
     sys.argv.remove(getdns_root)
+
+if '--with-ext-uv' in sys.argv:
+    sys.argv.remove('--with-ext-uv')
+    define_macros.append(('WITH_UV', None))
+    libraries.extend(['getdns_ext_uv', 'uv'])
+    sources.append('getdns_ext_uv.c')
 
 library_dirs = [ '/usr/local/lib' ]
 if lib_dir:
@@ -57,10 +71,10 @@ if not ((platform_version[0] == '3') or (platform_version == ['2', '7'])):
 
 getdns_module = Extension('getdns',
                     include_dirs = [ '/usr/local/include', ],
-                    libraries = [ 'getdns' ],
+                    libraries = libraries,
+                    define_macros = define_macros,
                     library_dirs = library_dirs,
-                    sources = [ 'getdns.c', 'pygetdns_util.c', 'context.c',
-                                'context_util.c', 'result.c' ],
+                    sources = sources,
                     extra_compile_args = CFLAGS,
                     runtime_library_dirs = library_dirs,
                     )

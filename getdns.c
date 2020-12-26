@@ -45,6 +45,9 @@
 #include <datetime.h>
 #include <time.h>
 #include "pygetdns.h"
+#ifdef WITH_UV
+extern PyTypeObject getdns_UVContextType;
+#endif
 
 
 PyObject *getdns_error;
@@ -268,7 +271,12 @@ PyTypeObject getdns_ContextType = {
     context_getattro,          /*tp_getattro*/
     context_setattro,          /*tp_setattro*/
     0,                         /*tp_as_buffer*/
+#ifdef WITH_UV
+    Py_TPFLAGS_DEFAULT |
+    Py_TPFLAGS_BASETYPE,       /*tp_flags*/
+#else
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+#endif
     "Context object",          /* tp_doc */
     0,                         /* tp_traverse       */
     0,                         /* tp_clear          */
@@ -503,6 +511,18 @@ PyInit_getdns(void)
     }
     Py_INCREF(&getdns_ContextType);
     PyModule_AddObject(g, "Context", (PyObject *)&getdns_ContextType);
+#ifdef WITH_UV
+    Py_INCREF(&getdns_UVContextType);
+    if (PyModule_AddObject(g, "UVContext", (PyObject *)&getdns_UVContextType) < 0) {
+      Py_DECREF(g);
+      Py_DECREF((PyObject *)&getdns_UVContextType);
+      return NULL;
+    }
+    if (PyType_Ready(&getdns_UVContextType) < 0) {
+      PyErr_SetString(PyExc_ImportError, "Unable to initialize getdns.UVContext");
+      return NULL;
+    }
+#endif
     PyModule_AddStringConstant(g, "getdns_version", getdns_get_version());
     PyModule_AddStringConstant(g, "__version__", PYGETDNS_VERSION);
     add_getdns_constants(g);
@@ -533,6 +553,18 @@ initgetdns(void)
         return;
     Py_INCREF(&getdns_ContextType);
     PyModule_AddObject(g, "Context", (PyObject *)&getdns_ContextType);
+#ifdef WITH_UV
+    Py_INCREF(&getdns_UVContextType);
+    if (PyModule_AddObject(g, "UVContext", (PyObject *)&getdns_UVContextType) < 0) {
+      Py_DECREF(g);
+      Py_DECREF((PyObject *)&getdns_UVContextType);
+      return NULL;
+    }
+    if (PyType_Ready(&getdns_UVContextType) < 0) {
+      PyErr_SetString(PyExc_ImportError, "Unable to initialize getdns.UVContext");
+      return NULL;
+    }
+#endif
     PyModule_AddStringConstant(g, "__version__", PYGETDNS_VERSION);
     PyModule_AddStringConstant(g, "getdns_version", getdns_get_version());
     add_getdns_constants(g);
